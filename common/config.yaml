@@ -1,0 +1,9 @@
+server:
+  production: false
+  mongo_url: "127.0.0.1"
+  mongo_username: ""
+  mongo_password: ""
+  redis_url: "127.0.0.1:6379"
+
+bot:
+  token: "1611082706:AAEvABxzee2HSrzxU7HeKR8WWuRZUoHEtSE"
