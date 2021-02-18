@@ -20,6 +20,15 @@ const (
 //answer keyboards
 const (
 	BotAnswerMessageSearchUserWishlist        = "Введите номер или username вашего друга"
-	BotAnswerMessageAddWishlist               = "Введите название или добавьте фотографию"
+	BotAnswerMessageAddWishlist               = "Введите название или добавьте фотографию(также можно отправить ссылку)."
 	BotAnswerMessageAccessPhoneNumberQuestion = "Я умею показывать твой вишлист твоим друзьям по номеру телефона. Для этого необходимо дать разрешение"
+)
+
+const (
+	SearchUserTypeSender    = "sender"
+	SearchUserTypeRecipient = "recipient"
+)
+
+const (
+	ActionTypeSearchUser = "search_user"
 )

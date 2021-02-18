@@ -145,7 +145,9 @@ func (b *Bot) shareWishlistLink(message *tgbotapi.Message) error {
 	msg := tgbotapi.NewMessage(message.Chat.ID, "Теперь твой вишлист будет виден твоим друзьям")
 	msg.ReplyMarkup = mainKeyboard
 	_, err := b.bot.Send(msg)
-	go b.removeOldMessageIDOnRedis(message)
+	go func() {
+		b.removeOldMessageIDOnRedis(message)
+	}()
 	return err
 }
 
@@ -154,11 +156,17 @@ func (b *Bot) searchWishlistByPhoneNumber(message *tgbotapi.Message) error {
 	if message.Contact != nil {
 		query = message.Contact.PhoneNumber
 	}
+	go b.updateUserSearchCount(message.From.ID, common.SearchUserTypeSender)
 	user, err := db.UserRepo.SearchUser(query)
 	if err != nil {
 		logrus.Errorf("searchWishlistByPhoneNumber:SearchUser: chat_id = %v,  err = %v", message.Chat.ID, err)
+		go b.insertUserAction(common.ActionTypeSearchUser, message, query, nil)
 		return b.handleErrorMessage(message, common.BotErrorNotFoundSearchWishlist)
 	}
+	go func() {
+		b.updateUserSearchCount(user.TelegramUserID, common.SearchUserTypeRecipient)
+		b.insertUserAction(common.ActionTypeSearchUser, message, query, user)
+	}()
 	wishlists, err := db.FavoriteRepo.GetUserWishlistByPhone(user.TelegramUserID)
 	if len(wishlists) > 0 {
 		text := fmt.Sprint("*Пользователь*:*" + user.UserName + "*\n_Количество хотелок_:*" + strconv.Itoa(len(wishlists)) + "*\n")
@@ -200,4 +208,16 @@ func (b *Bot) searchWishlistByPhoneNumber(message *tgbotapi.Message) error {
 		}
 	}
 	return nil
+}
+
+func (b *Bot) updateUserSearchCount(senderID int, requestType string) {
+	if err := db.UserRepo.IncrementUserSearchCountByType(senderID, requestType); err != nil {
+		logrus.Errorf("updateUserActionSearchUsers:sender_id:%v, err: %v", senderID, err)
+	}
+}
+
+func (b *Bot) insertUserAction(actionType string, message *tgbotapi.Message, query string, recipient *db.User) {
+	if err := db.ActionRepo.InsertAction(actionType, message, query, recipient); err != nil {
+		logrus.Errorf("insertUserAction:chat_id:%v, err: %v", message.Chat.ID, err)
+	}
 }

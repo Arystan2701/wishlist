@@ -63,7 +63,7 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) error {
 
 func (b *Bot) handleStartCommand(message *tgbotapi.Message) error {
 	msg := tgbotapi.NewMessage(message.Chat.ID, message.Text)
-	msg.Text = fmt.Sprintf("Привет, %v. Данный бот поможет тебе составить твой список желаний или посмотреть список желаний твоих друзей!", message.From.UserName)
+	msg.Text = fmt.Sprintf("Привет, %v. Данный бот поможет тебе составить твой список желаний или посмотреть список желаний твоих друзей!", message.From.FirstName)
 	msg.ReplyMarkup = mainKeyboard
 	_, err := b.bot.Send(msg)
 	go func() {

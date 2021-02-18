@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"gitlab.com/telegram/wishlist/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -21,16 +22,23 @@ func NewUserRepository(client *mongo.Client, redisClient *redis.Client) *userRep
 	}
 }
 
-type ShortUser struct {
-	TelegramUserID int    `json:"telegram_user_id" bson:"telegram_user_id"`
-	FirstName      string `json:"first_name" bson:"first_name"`
-	LastName       string `json:"last_name" bson:"last_name"`
-	UserName       string `json:"username" bson:"username"`
-	Phone          string `json:"phone" bson:"phone"`
+type User struct {
+	TelegramUserID  int    `json:"telegram_user_id" bson:"telegram_user_id"`
+	FirstName       string `json:"first_name" bson:"first_name"`
+	LastName        string `json:"last_name" bson:"last_name"`
+	UserName        string `json:"username" bson:"username"`
+	Phone           string `json:"phone" bson:"phone"`
+	SearchReqCount  int    `json:"search_req_count" bson:"search_req_count"`
+	SearchRespCount int    `json:"search_resp_count" bson:"search_resp_count"`
 }
 
-func (u *userRepository) CreateUser(message *tgbotapi.Message) (*ShortUser, error) {
-	user := &ShortUser{
+type ShortUser struct {
+	TelegramUserID int    `json:"telegram_user_id" bson:"telegram_user_id"`
+	UserName       string `json:"username" bson:"username"`
+}
+
+func (u *userRepository) CreateUser(message *tgbotapi.Message) (*User, error) {
+	user := &User{
 		TelegramUserID: message.From.ID,
 		FirstName:      message.From.FirstName,
 		LastName:       message.From.LastName,
@@ -40,12 +48,12 @@ func (u *userRepository) CreateUser(message *tgbotapi.Message) (*ShortUser, erro
 	return user, err
 }
 
-func (u *userRepository) GetUser(userID int) (*ShortUser, error) {
+func (u *userRepository) GetUser(userID int) (*User, error) {
 	res := u.UserCol.FindOne(context.TODO(), bson.M{"telegram_user_id": userID})
 	if err := res.Err(); err != nil {
 		return nil, err
 	}
-	var user ShortUser
+	var user User
 	err := res.Decode(&user)
 	return &user, err
 
@@ -63,13 +71,25 @@ func (u *userRepository) UpdateUserPhone(contact *tgbotapi.Contact) error {
 
 }
 
-func (u *userRepository) SearchUser(query string) (*ShortUser, error) {
+func (u *userRepository) SearchUser(query string) (*User, error) {
 	filter := bson.M{"$or": bson.A{bson.M{"username": query}, bson.M{"phone": query}}}
 	res := u.UserCol.FindOne(context.TODO(), filter)
 	if err := res.Err(); err != nil {
 		return nil, err
 	}
-	var user ShortUser
+	var user User
 	err := res.Decode(&user)
 	return &user, err
+}
+
+func (u *userRepository) IncrementUserSearchCountByType(userUD int, requestType string) error {
+	filter := bson.M{"telegram_user_id": userUD}
+	update := bson.M{}
+	if requestType == common.SearchUserTypeSender {
+		update["search_req_count"] = 1
+	} else {
+		update["search_resp_count"] = 1
+	}
+	_, err := u.UserCol.UpdateOne(context.TODO(), filter, bson.M{"$inc": update})
+	return err
 }
