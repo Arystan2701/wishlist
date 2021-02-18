@@ -24,7 +24,7 @@ func NewActionRepo(client *mongo.Client, redis *redis.Client) *actionRepo {
 type Action struct {
 	Sender      ShortUser  `json:"sender" bson:"sender"`
 	Type        string     `json:"type" bson:"type"`
-	Recipient   *ShortUser `json:"recipient" bson:"recipient`
+	Recipient   *ShortUser `json:"recipient,omitempty" bson:"recipient,omitempty"`
 	SearchQuery string     `json:"search_query" bson:"search_query"`
 }
 
