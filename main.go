@@ -78,7 +78,17 @@ func main() {
 	redisClient := initRedisClient()
 	logrus.Info("authorized bot =", botApi.Self.UserName)
 	bot := telegram.NewBot(botApi)
+	//router := api.InitRouter()
+	//if err := router.Run(":8888"); err != nil {
+	//	logrus.Error(err)
+	//}
 
+	//go func() {
+	//	router := server.InitRouter()
+	//	if err := router.Run(":8888"); err != nil {
+	//		logrus.Error(err)
+	//	}
+	//}()
 	if err := bot.Start(mongoClient, redisClient); err != nil {
 		logrus.Error("main bot start:", err)
 	}

@@ -45,6 +45,7 @@ func (b *Bot) getUserWishlist(message *tgbotapi.Message) error {
 			logrus.Errorf("getUserWishlist:GetUser: chat_id = %v,  err = %v", message.Chat.ID, err)
 			return b.handleErrorMessage(message, common.BotErrorInvalidHandler)
 		}
+
 		if user.Phone == "" {
 			msg := tgbotapi.NewMessage(message.Chat.ID, common.BotAnswerMessageAccessPhoneNumberQuestion)
 			msg.ReplyMarkup = accessPhoneNumberKeyboard
@@ -142,6 +143,7 @@ func (b *Bot) shareWishlistLink(message *tgbotapi.Message) error {
 	if err := db.UserRepo.UpdateUserPhone(message.Contact); err != nil {
 		return err
 	}
+	//msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Вот твоя ссылка на вишлист. скопиру ее и поделись с друзьями  https://9f8b51b92dec.ngrok.io?username=%v", message.From.UserName))
 	msg := tgbotapi.NewMessage(message.Chat.ID, "Теперь твой вишлист будет виден твоим друзьям")
 	msg.ReplyMarkup = mainKeyboard
 	_, err := b.bot.Send(msg)
@@ -152,7 +154,7 @@ func (b *Bot) shareWishlistLink(message *tgbotapi.Message) error {
 }
 
 func (b *Bot) searchWishlistByPhoneNumber(message *tgbotapi.Message) error {
-	query := message.Text
+	query := common.VerifySearchQuery(message.Text)
 	if message.Contact != nil {
 		query = message.Contact.PhoneNumber
 	}
